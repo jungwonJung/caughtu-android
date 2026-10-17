@@ -4,8 +4,6 @@
 
 CaughtU reads the official Instagram *"Download your information"* export instead — no Instagram login, no password sharing — and shows who doesn't follow you back, your fans and your mutuals. Snapshots are saved to the cloud so you can track changes over time.
 
-> Android port of the CaughtU iOS app · Team Project – Mobile Application in the Cloud
-
 ## Team – se7team
 
 | Member | Role |
