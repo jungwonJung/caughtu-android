@@ -4,7 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
-// Dark mode is forced, same as the iOS app
+// Dark mode is forced
 private val CaughtUColors = darkColorScheme(
     primary = Purple,
     background = Background,
