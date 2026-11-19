@@ -13,6 +13,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,7 +48,23 @@ fun SnapshotListScreen(
     onOpen: (String) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    LaunchedEffect(state.message) {
+        state.message?.let { snackbar.showSnackbar(it); viewModel.messageShown() }
+    }
+    state.pendingDelete?.let { item ->
+        AlertDialog(
+            onDismissRequest = viewModel::cancelDelete,
+            title = { Text("Delete snapshot?") },
+            text = { Text("\"${item.label}\" will be deleted permanently.") },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmDelete) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = viewModel::cancelDelete) { Text("Cancel") } },
+        )
+    }
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text("My snapshots", fontWeight = FontWeight.Bold) },
@@ -61,7 +84,7 @@ fun SnapshotListScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(state.items, key = { it.id }) { item ->
-                        SnapshotRow(item, onClick = { onOpen(item.id) })
+                        SnapshotRow(item, onClick = { onOpen(item.id) }, onDelete = { viewModel.askDelete(item) })
                     }
                 }
             }
@@ -70,7 +93,7 @@ fun SnapshotListScreen(
 }
 
 @Composable
-private fun SnapshotRow(item: Snapshot, onClick: () -> Unit) {
+private fun SnapshotRow(item: Snapshot, onClick: () -> Unit, onDelete: () -> Unit) {
     Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -94,6 +117,9 @@ private fun SnapshotRow(item: Snapshot, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text("don't follow\nyou back", style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete ${item.label}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
