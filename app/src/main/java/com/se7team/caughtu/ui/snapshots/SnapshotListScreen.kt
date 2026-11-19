@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.se7team.caughtu.data.model.Snapshot
+import com.se7team.caughtu.domain.SnapshotListLogic
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,8 +84,9 @@ fun SnapshotListScreen(
                 state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 state.error != null -> CenterText(state.error!!, isError = true)
                 else -> Column(Modifier.fillMaxSize()) {
-                    SearchField(state.query, viewModel::onQueryChange)
-                    LazyColumn(
+                    if (state.totalCount > 0) SearchField(state.query, viewModel::onQueryChange)
+                    val empty = SnapshotListLogic.emptyMessage(state.totalCount, state.items.size, state.query)
+                    if (empty != null) CenterText(empty) else LazyColumn(
                         contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 88.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {

@@ -48,3 +48,13 @@ class SnapshotListLogicTest {
         assertEquals(listOf(a, b), SnapshotListLogic.filter(listOf(a, b), "  "))
     }
 }
+
+class EmptyStateTest {
+    @Test fun emptyListAndNoResultsHaveDifferentMessages() {
+        val empty = SnapshotListLogic.emptyMessage(0, 0, "")
+        val noHits = SnapshotListLogic.emptyMessage(3, 0, "zzz")
+        assertNotNull(empty); assertNotNull(noHits)
+        assertTrue(empty != noHits)
+        assertNull(SnapshotListLogic.emptyMessage(3, 2, "a"))
+    }
+}

@@ -16,4 +16,11 @@ object SnapshotListLogic {
             listOf(s.label, s.note, s.typeName).any { it.contains(q, ignoreCase = true) }
         }
     }
+
+    /** E3: what to show instead of the list, or null when there are items to show. */
+    fun emptyMessage(totalCount: Int, shownCount: Int, query: String): String? = when {
+        totalCount == 0 -> "No snapshots yet.\nTap + to save your first export analysis."
+        shownCount == 0 -> "No snapshots match \"${query.trim()}\".\nTry another word or clear the search."
+        else -> null
+    }
 }
