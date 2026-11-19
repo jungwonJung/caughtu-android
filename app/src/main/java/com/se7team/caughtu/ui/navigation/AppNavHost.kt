@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.se7team.caughtu.AppContainer
 import com.se7team.caughtu.ui.auth.AuthViewModel
 import com.se7team.caughtu.ui.auth.LoginScreen
 import com.se7team.caughtu.ui.auth.RegisterScreen
@@ -22,36 +23,31 @@ object Routes {
 }
 
 @Composable
-fun AppNavHost(authViewModel: AuthViewModel = viewModel()) {
+fun AppNavHost(session: SessionViewModel = viewModel { SessionViewModel(AppContainer.authRepository) }) {
     val navController = rememberNavController()
-    val isLoggedIn by authViewModel.isLoggedIn.collectAsStateWithLifecycle()
-    // Auto-login: decided once, from the cached Firebase user.
+    val isLoggedIn by session.isLoggedIn.collectAsStateWithLifecycle()
+    // Auto-login: decided once, from the cached session.
     val startDestination = remember { if (isLoggedIn) Routes.HOME else Routes.LOGIN }
 
     // Navigation reacts to auth state; screens never navigate after login/logout themselves.
     LaunchedEffect(isLoggedIn) {
-        val target = if (isLoggedIn) Routes.HOME else Routes.LOGIN
         val current = navController.currentDestination?.route
-        if (isLoggedIn && current == Routes.HOME) return@LaunchedEffect
-        if (!isLoggedIn && current != Routes.HOME) return@LaunchedEffect
-        navController.navigateClearingBackStack(target)
+        val onAuthScreen = current == Routes.LOGIN || current == Routes.REGISTER
+        if (isLoggedIn && onAuthScreen) navController.navigateClearingBackStack(Routes.HOME)
+        if (!isLoggedIn && !onAuthScreen && current != null) navController.navigateClearingBackStack(Routes.LOGIN)
     }
 
     NavHost(navController, startDestination = startDestination) {
         composable(Routes.LOGIN) {
-            LoginScreen(authViewModel, onRegisterClick = {
-                authViewModel.resetForm()
-                navController.navigate(Routes.REGISTER)
-            })
+            val vm = viewModel { AuthViewModel(AppContainer.authRepository) }
+            LoginScreen(vm, onRegisterClick = { navController.navigate(Routes.REGISTER) })
         }
         composable(Routes.REGISTER) {
-            RegisterScreen(authViewModel, onLoginClick = {
-                authViewModel.resetForm()
-                navController.popBackStack()
-            })
+            val vm = viewModel { AuthViewModel(AppContainer.authRepository) }
+            RegisterScreen(vm, onLoginClick = { navController.popBackStack() })
         }
         composable(Routes.HOME) {
-            HomeScreen(authViewModel.currentUserEmail, onLogout = authViewModel::logout)
+            HomeScreen(session.currentUserEmail, onLogout = session::logout)
         }
     }
 }

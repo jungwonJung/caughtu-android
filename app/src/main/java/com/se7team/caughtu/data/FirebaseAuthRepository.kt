@@ -16,21 +16,25 @@ class FirebaseAuthRepository(
     override val currentUserEmail: String?
         get() = auth.currentUser?.email
 
+    override val isLoggedInNow: Boolean
+        get() = auth.currentUser != null
+
     override val isLoggedIn: Flow<Boolean> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { trySend(it.currentUser != null) }
         auth.addAuthStateListener(listener)
         awaitClose { auth.removeAuthStateListener(listener) }
     }
 
-    override suspend fun register(email: String, password: String): Result<Unit> = runCatching {
+    override suspend fun register(email: String, password: String): Result<Unit> = call {
         auth.createUserWithEmailAndPassword(email, password).await()
-        Unit
     }
 
-    override suspend fun login(email: String, password: String): Result<Unit> = runCatching {
+    override suspend fun login(email: String, password: String): Result<Unit> = call {
         auth.signInWithEmailAndPassword(email, password).await()
-        Unit
     }
 
     override fun logout() = auth.signOut()
+
+    private inline fun call(block: () -> Unit): Result<Unit> =
+        runCatching(block).recoverCatching { throw DataException(friendlyAuthMessage(it), it) }
 }
