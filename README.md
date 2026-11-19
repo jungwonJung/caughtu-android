@@ -10,6 +10,15 @@ CaughtU reads the official Instagram *"Download your information"* export instea
 | --- | --- |
 | Jungwon Jung ([@jungwonJung](https://github.com/jungwonJung)) | Product Owner · Tech Lead · Developer · QA/DevOps (one-person team) |
 
+## Definition of Done
+
+A story is done when:
+
+1. It is merged to `main` through a reviewed PR that says `Closes #…`.
+2. It works on a second device (a physical phone or a second emulator), signed in as a second account.
+3. It does not crash on invalid input, screen rotation or Back.
+4. Its acceptance criteria are ticked and its issue is closed.
+
 ## MVP features
 
 | # | Feature | Sprint |
