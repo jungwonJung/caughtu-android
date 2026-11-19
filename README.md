@@ -99,3 +99,4 @@ Inside the app: `data` (repositories – the only code that talks to Firebase) �
 
 - Deploy rules: `firebase deploy --only firestore:rules`
 - Seed reference data: `./scripts/seed-snapshot-types.sh` (needs `firebase login` as a project owner)
+- Check the access rules: set `RULES_A_EMAIL`, `RULES_A_PASSWORD`, `RULES_B_EMAIL`, `RULES_B_PASSWORD` (two test users) and run `python3 scripts/rules_scenarios.py` – prints the 8-scenario results table, exits 1 on any mismatch
