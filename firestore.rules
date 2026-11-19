@@ -7,16 +7,52 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Reference data: read-only for signed-in users, never writable from the app.
+    function isOwner(data) {
+      return signedIn() && data.ownerId == request.auth.uid;
+    }
+
+    function isCount(n) {
+      return n is int && n >= 0 && n <= 10000000;
+    }
+
+    // Mirrors domain/SnapshotValidator.kt in the app.
+    function validSnapshot(d) {
+      let fields = ['ownerId', 'label', 'note', 'typeId', 'typeName', 'exportedAt',
+                    'followerCount', 'followingCount', 'notFollowingBackCount',
+                    'createdAt', 'updatedAt'];
+      return d.keys().hasAll(fields)                       // required fields
+          && d.keys().hasOnly(fields)                      // only allowed fields
+          && d.ownerId is string
+          && d.label is string && d.label.size() >= 1 && d.label.size() <= 40
+          && d.note is string && d.note.size() <= 200
+          && d.typeId is string
+          && exists(/databases/$(database)/documents/snapshotTypes/$(d.typeId))
+          && d.typeName is string
+          && d.exportedAt is timestamp && d.exportedAt <= request.time   // not in the future
+          && isCount(d.followerCount)
+          && isCount(d.followingCount)
+          && isCount(d.notFollowingBackCount)
+          && d.notFollowingBackCount <= d.followingCount   // logical rule, same as the app
+          && d.updatedAt == request.time;                  // server clock only
+    }
+
+    // Reference data: readable by signed-in users, writable by nobody from the app.
     match /snapshotTypes/{typeId} {
       allow read: if signedIn();
       allow write: if false;
     }
 
-    // Baseline until R8: only signed-in users, only their own documents.
     match /snapshots/{snapshotId} {
-      allow read, update, delete: if signedIn() && resource.data.ownerId == request.auth.uid;
-      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow read, delete: if isOwner(resource.data);
+
+      allow create: if isOwner(request.resource.data)
+                    && validSnapshot(request.resource.data)
+                    && request.resource.data.createdAt == request.time;
+
+      allow update: if isOwner(resource.data)
+                    && request.resource.data.ownerId == resource.data.ownerId
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && validSnapshot(request.resource.data);
     }
 
     // Everything else is denied by default.
