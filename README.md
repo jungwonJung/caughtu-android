@@ -21,16 +21,16 @@ A story is done when:
 
 ## MVP features
 
-| # | Feature | Sprint |
+| # | Feature | Status |
 | --- | --- | --- |
-| 1 | Register, log in, log out, auto-login (Firebase Auth) | **Sprint 1** (Lab 1) |
-| 2 | Upload an Instagram export (ZIP / HTML / JSON) and analyse it | **Sprint 1** (Lab 2) |
-| 3 | Snapshot list screen (my saved analyses) | **Sprint 1** (Lab 2) |
-| 4 | Snapshot detail: Don't follow back / Fans / Mutuals + edit label & note | **Sprint 1** (Lab 2) |
-| 5 | Compare two snapshots – who unfollowed me | Later |
-| 6 | Cloud parsing: upload ZIP to Storage, Cloud Function parses it | Later (Lab 3) |
+| 1 | Register, log in, log out, auto-login (Firebase Auth) | ✅ Sprint 1 (Lab 1) |
+| 2 | Live list of my snapshots, search, empty states | ✅ Sprint 2 (Lab 2) |
+| 3 | Create / edit a snapshot (type picker, date picker, validation) | ✅ Sprint 2 (Lab 2) |
+| 4 | Delete a snapshot with confirmation | ✅ Sprint 2 (Lab 2) |
+| 5 | Parse the Instagram export **on the phone** and pre-fill the counts | Backlog |
+| 6 | Compare two snapshots – who unfollowed me | Backlog |
 
-Screens (5): Login · Register · Snapshot list · Snapshot detail/edit · Upload
+Screens: Login · Register · Snapshot list · Snapshot form (create / edit)
 
 ## Tech stack
 
@@ -81,9 +81,6 @@ Reference data is seeded with `scripts/seed-snapshot-types.sh`; the app can neve
 flowchart LR
   A[Android app<br/>Kotlin + Compose] -->|Auth SDK| B[Firebase Authentication]
   A -->|Firestore SDK| C[(Cloud Firestore)]
-  A -->|Storage SDK<br/>Lab 3| S[(Cloud Storage)]
-  S --> D[Cloud Functions<br/>Lab 3]
-  D --> C
 ```
 
 Inside the app: `data` (repositories – the only code that talks to Firebase) · `domain` (pure Kotlin validators and list logic) · `ui` (screens + one ViewModel per screen, Navigation Compose).
