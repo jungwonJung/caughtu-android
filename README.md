@@ -2,7 +2,7 @@
 
 **Problem statement:** Students who use Instagram can't safely see who doesn't follow them back, because existing apps demand their Instagram password and a weekly subscription.
 
-CaughtU reads the official Instagram *"Download your information"* export instead — no Instagram login, no password sharing — and shows who doesn't follow you back, your fans and your mutuals. Snapshots are saved to the cloud so you can track changes over time.
+CaughtU reads the official Instagram *"Download your information"* export instead — no Instagram login, no password sharing — and shows who doesn't follow you back, your fans and your mutuals. Each analysis is saved as a snapshot so you can track changes over time. **Privacy:** only the counts and your own label/note go to the cloud – the export file and the usernames in it never leave the phone.
 
 ## Team – se7team
 
@@ -45,13 +45,35 @@ Screens (5): Login · Register · Snapshot list · Snapshot detail/edit · Uploa
 
 ## Data model (Cloud Firestore)
 
-| Collection | Fields (type) |
-| --- | --- |
-| `users` | uid (doc id) · email (string) · displayName (string) · createdAt (timestamp) |
-| `snapshots` | **ownerId** (string) · label (string) · note (string) · followerCount (number) · followingCount (number) · notFollowingBackCount (number) · createdAt (timestamp) |
-| `entries` | **ownerId** (string) · snapshotId (string) · username (string) · relation (string: `notFollowingBack` / `fan` / `mutual`) · followedAt (timestamp) |
+Who sets a field: **user** = typed or picked in the form · **app** = written by the app from the session / reference data · **server** = `FieldValue.serverTimestamp()` (server clock).
 
-`ownerId` links every document to the Firebase Auth uid of its owner.
+### `snapshots` (main collection – users create, edit, delete)
+
+| Field | Type | Set by | Notes |
+| --- | --- | --- | --- |
+| *(document id)* | string | server | auto id |
+| `ownerId` | string | app | Firebase Auth uid of the signed-in user, never user input |
+| `label` | string | user | 1–40 characters |
+| `note` | string | user | 0–200 characters |
+| `typeId` | string | user | id of a `snapshotTypes` document (picked from a list) |
+| `typeName` | string | app | copied from the picked type, for the list screen |
+| `exportedAt` | timestamp | user | date of the Instagram export, not in the future |
+| `followerCount` | number (int) | user | ≥ 0 |
+| `followingCount` | number (int) | user | ≥ 0 |
+| `notFollowingBackCount` | number (int) | user | ≥ 0 and ≤ `followingCount` |
+| `createdAt` | timestamp | server | set once on create, never changed |
+| `updatedAt` | timestamp | server | set on create and on every update |
+
+### `snapshotTypes` (reference collection – read-only for users)
+
+| Field | Type | Set by | Notes |
+| --- | --- | --- | --- |
+| *(document id)* | string | admin | e.g. `weekly`, `monthly`, `before-cleanup`, `after-cleanup` |
+| `name` | string | admin | shown in the picker |
+| `intervalDays` | number (int) | admin | suggested days between checks (0 = one-off) |
+| `order` | number (int) | admin | sort order in the picker |
+
+Reference data is seeded with `scripts/seed-snapshot-types.sh`; the app can never write it.
 
 ## Architecture
 
@@ -64,7 +86,7 @@ flowchart LR
   D --> C
 ```
 
-Inside the app: `data` (AuthRepository → Firebase) · `domain` (AuthValidator) · `ui` (screens + ViewModels, Navigation Compose).
+Inside the app: `data` (repositories – the only code that talks to Firebase) · `domain` (pure Kotlin validators and list logic) · `ui` (screens + one ViewModel per screen, Navigation Compose).
 
 ## How to run
 
