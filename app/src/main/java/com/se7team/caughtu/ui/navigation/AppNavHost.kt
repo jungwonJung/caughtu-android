@@ -18,7 +18,8 @@ import com.se7team.caughtu.ui.auth.LoginScreen
 import com.se7team.caughtu.ui.auth.RegisterScreen
 import com.se7team.caughtu.ui.snapshots.SnapshotListScreen
 import com.se7team.caughtu.ui.snapshots.SnapshotListViewModel
-import androidx.compose.material3.Text
+import com.se7team.caughtu.ui.snapshots.SnapshotEditScreen
+import com.se7team.caughtu.ui.snapshots.SnapshotEditViewModel
 
 object Routes {
     const val LOGIN = "login"
@@ -63,7 +64,11 @@ fun AppNavHost(session: SessionViewModel = viewModel { SessionViewModel(AppConta
         composable(
             Routes.EDIT,
             arguments = listOf(navArgument("id") { type = NavType.StringType; nullable = true; defaultValue = null }),
-        ) { Text("Form – see #16") }
+        ) { entry ->
+            val id = entry.arguments?.getString("id") // null = create
+            val vm = viewModel { SnapshotEditViewModel(id, AppContainer.snapshotRepository) }
+            SnapshotEditScreen(vm, onDone = { navController.popBackStack() })
+        }
     }
 }
 

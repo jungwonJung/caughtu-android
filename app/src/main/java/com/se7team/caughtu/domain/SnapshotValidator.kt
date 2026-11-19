@@ -1,5 +1,9 @@
 package com.se7team.caughtu.domain
 
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeParseException
+
 /** Raw form values as the user typed them. Pure Kotlin so it can be unit-tested on the JVM. */
 data class SnapshotForm(
     val label: String = "",
@@ -47,6 +51,13 @@ object SnapshotValidator {
         exportedAt == null -> "Export date is required"
         exportedAt > now -> "Export date can't be in the future"
         else -> null
+    }
+
+    /** Parses YYYY-MM-DD to UTC-midnight epoch millis, or null if the text is not a real date. */
+    fun parseDate(text: String): Long? = try {
+        LocalDate.parse(text.trim()).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+    } catch (_: DateTimeParseException) {
+        null
     }
 
     /** Returns the parsed number, or null if the text is not a whole number in range. */
