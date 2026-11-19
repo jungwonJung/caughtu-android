@@ -11,6 +11,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -84,7 +91,7 @@ private fun Form(state: SnapshotEditUiState, vm: SnapshotEditViewModel) {
     ) {
         AuthTextField(f.label, vm::onLabelChange, "Label", e.label, KeyboardType.Text)
         TypePicker(state.types, f.typeId, e.typeId, vm::onTypeChange)
-        AuthTextField(state.dateText, vm::onDateTextChange, "Export date (YYYY-MM-DD)", e.exportedAt, KeyboardType.Number)
+        DateField(f.exportedAt, e.exportedAt, vm::onDateSelected)
         AuthTextField(f.followerCount, vm::onFollowersChange, "Followers", e.followerCount, KeyboardType.Number)
         AuthTextField(f.followingCount, vm::onFollowingChange, "Following", e.followingCount, KeyboardType.Number)
         AuthTextField(f.notFollowingBackCount, vm::onNotFollowingBackChange, "Don't follow you back", e.notFollowingBackCount, KeyboardType.Number)
@@ -122,5 +129,41 @@ private fun TypePicker(types: List<SnapshotType>, selectedId: String, error: Str
                 DropdownMenuItem(text = { Text(type.name) }, onClick = { onSelect(type.id); expanded = false })
             }
         }
+    }
+}
+
+/** E4: read-only field that opens the native Material 3 date picker. Future days can't be picked. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateField(millis: Long?, error: String?, onSelect: (Long?) -> Unit) {
+    var open by rememberSaveable { mutableStateOf(false) }
+    Box {
+        OutlinedTextField(
+            value = millis?.let(::formatDate).orEmpty(),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Export date") },
+            isError = error != null,
+            supportingText = error?.let { { Text(it) } },
+            trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = "Pick export date") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        // Transparent overlay so a tap anywhere on the field opens the picker.
+        Box(Modifier.matchParentSize().clickable { open = true })
+    }
+    if (open) {
+        val pickerState = rememberDatePickerState(
+            initialSelectedDateMillis = millis,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long) = utcTimeMillis <= System.currentTimeMillis()
+            },
+        )
+        DatePickerDialog(
+            onDismissRequest = { open = false },
+            confirmButton = {
+                TextButton(onClick = { onSelect(pickerState.selectedDateMillis); open = false }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { open = false }) { Text("Cancel") } },
+        ) { DatePicker(pickerState) }
     }
 }

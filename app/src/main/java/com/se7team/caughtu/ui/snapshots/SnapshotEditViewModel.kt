@@ -13,8 +13,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.ZoneOffset
 
 data class SnapshotEditUiState(
     val isNew: Boolean = true,
@@ -22,7 +20,6 @@ data class SnapshotEditUiState(
     val loadError: String? = null,
     val types: List<SnapshotType> = emptyList(),
     val form: SnapshotForm = SnapshotForm(),
-    val dateText: String = "",
     val errors: SnapshotErrors = SnapshotErrors(),
     val isSaving: Boolean = false,
     val saveError: String? = null,
@@ -61,7 +58,6 @@ class SnapshotEditViewModel(
                     followingCount = s.followingCount.toString(),
                     notFollowingBackCount = s.notFollowingBackCount.toString(),
                 ),
-                dateText = s?.let { snap -> Instant.ofEpochMilli(snap.exportedAt).atZone(ZoneOffset.UTC).toLocalDate().toString() } ?: it.dateText,
             )
         }
     }
@@ -69,9 +65,8 @@ class SnapshotEditViewModel(
     fun onLabelChange(v: String) = _uiState.update { it.copy(form = it.form.copy(label = v), errors = it.errors.copy(label = null)) }
     fun onNoteChange(v: String) = _uiState.update { it.copy(form = it.form.copy(note = v), errors = it.errors.copy(note = null)) }
     fun onTypeChange(v: String) = _uiState.update { it.copy(form = it.form.copy(typeId = v), errors = it.errors.copy(typeId = null)) }
-    fun onDateTextChange(v: String) = _uiState.update {
-        it.copy(dateText = v, form = it.form.copy(exportedAt = SnapshotValidator.parseDate(v)), errors = it.errors.copy(exportedAt = null))
-    }
+    /** E4: millis come from the date picker (UTC midnight of the picked day). */
+    fun onDateSelected(millis: Long?) = _uiState.update { it.copy(form = it.form.copy(exportedAt = millis), errors = it.errors.copy(exportedAt = null)) }
     fun onFollowersChange(v: String) = _uiState.update { it.copy(form = it.form.copy(followerCount = v), errors = it.errors.copy(followerCount = null)) }
     fun onFollowingChange(v: String) = _uiState.update {
         it.copy(form = it.form.copy(followingCount = v), errors = it.errors.copy(followingCount = null, notFollowingBackCount = null))
@@ -81,10 +76,7 @@ class SnapshotEditViewModel(
     fun save() {
         val s = _uiState.value
         if (s.isSaving) return
-        val errors = SnapshotValidator.validate(s.form, now()).let {
-            // A typed but unparseable date gets a clearer message than "required".
-            if (s.form.exportedAt == null && s.dateText.isNotBlank()) it.copy(exportedAt = "Use the format YYYY-MM-DD") else it
-        }
+        val errors = SnapshotValidator.validate(s.form, now())
         _uiState.update { it.copy(errors = errors, saveError = null) }
         if (!errors.isValid) return // invalid input never reaches the backend
 
