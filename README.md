@@ -32,6 +32,17 @@ A story is done when:
 
 Screens (5): Login · Register · Snapshot list · Snapshot detail/edit · Upload
 
+## Tech stack
+
+| Layer | Choice |
+| --- | --- |
+| App framework | Kotlin 2.2 + Jetpack Compose (Material 3), Navigation Compose, min SDK 26 |
+| Backend | Firebase (project `caughtu-se7team`, Spark free plan) |
+| Database | Cloud Firestore, location **eur3 (Europe)**, production mode |
+| Auth | Firebase Authentication (email + password) |
+| Access control | Firestore Security Rules (`firestore.rules`, deployed with `firebase deploy --only firestore:rules`) |
+| Test tools | JUnit 4 (JVM unit tests), Firebase Rules Playground / REST calls for rule scenarios |
+
 ## Data model (Cloud Firestore)
 
 | Collection | Fields (type) |
@@ -61,3 +72,8 @@ Inside the app: `data` (AuthRepository → Firebase) · `domain` (AuthValidator)
 2. `git clone https://github.com/jungwonJung/caughtu-android.git` and open the folder in Android Studio.
 3. `app/google-services.json` is committed, so the Firebase project `caughtu-se7team` works out of the box.
 4. Wait for Gradle sync, then **Run ▶ app** (min SDK 26).
+
+### Backend (maintainers)
+
+- Deploy rules: `firebase deploy --only firestore:rules`
+- Seed reference data: `./scripts/seed-snapshot-types.sh` (needs `firebase login` as a project owner)
