@@ -37,3 +37,14 @@ class SnapshotValidatorTest {
     @Test fun noteMax200() =
         assertNotNull(SnapshotValidator.validate(valid.copy(note = "x".repeat(201)), now).note)
 }
+
+class SnapshotListLogicTest {
+    private val a = com.se7team.caughtu.data.model.Snapshot(id = "a", label = "June check", note = "after cleanup", typeName = "Weekly check")
+    private val b = com.se7team.caughtu.data.model.Snapshot(id = "b", label = "Before trip", note = "", typeName = "Monthly check")
+
+    @Test fun searchIgnoresCaseAndCoversLabelAndNote() {
+        assertEquals(listOf(a), SnapshotListLogic.filter(listOf(a, b), "JUNE"))
+        assertEquals(listOf(a), SnapshotListLogic.filter(listOf(a, b), "Cleanup"))
+        assertEquals(listOf(a, b), SnapshotListLogic.filter(listOf(a, b), "  "))
+    }
+}

@@ -19,12 +19,14 @@ import kotlinx.coroutines.launch
 data class SnapshotListUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
-    val items: List<Snapshot> = emptyList(),
+    val items: List<Snapshot> = emptyList(),   // after search
+    val totalCount: Int = 0,                    // before search
+    val query: String = "",
     val pendingDelete: Snapshot? = null,   // shown in the confirmation dialog
     val message: String? = null,           // one-shot snackbar text
 )
 
-private data class Extras(val pendingDelete: Snapshot? = null, val message: String? = null)
+private data class Extras(val query: String = "", val pendingDelete: Snapshot? = null, val message: String? = null)
 
 class SnapshotListViewModel(
     private val snapshots: SnapshotRepository,
@@ -39,8 +41,16 @@ class SnapshotListViewModel(
 
     // WhileSubscribed: the Firestore listener runs only while the list is on screen (+5 s for rotation).
     val uiState: StateFlow<SnapshotListUiState> = combine(loaded, extras) { s, x ->
-        s.copy(pendingDelete = x.pendingDelete, message = x.message)
+        s.copy(
+            items = SnapshotListLogic.filter(s.items, x.query),
+            totalCount = s.items.size,
+            query = x.query,
+            pendingDelete = x.pendingDelete,
+            message = x.message,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SnapshotListUiState())
+
+    fun onQueryChange(q: String) = extras.update { it.copy(query = q) }
 
     fun askDelete(item: Snapshot) = extras.update { it.copy(pendingDelete = item) }
     fun cancelDelete() = extras.update { it.copy(pendingDelete = null) }
